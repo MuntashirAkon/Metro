@@ -15,14 +15,18 @@ package code.name.monkey.retromusic.service
 
 import android.content.Context
 import android.media.MediaPlayer
+import android.media.audiofx.HapticGenerator
+import android.os.Build
 import android.os.PowerManager
 import android.util.Log
+import androidx.annotation.RequiresApi
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.extensions.showToast
 import code.name.monkey.retromusic.extensions.uri
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.service.playback.Playback.PlaybackCallbacks
 import code.name.monkey.retromusic.util.PreferenceUtil.isGapLessPlayback
+import code.name.monkey.retromusic.util.PreferenceUtil.isHapticGeneratorActive
 import code.name.monkey.retromusic.util.logE
 
 /**
@@ -30,6 +34,8 @@ import code.name.monkey.retromusic.util.logE
  */
 class MultiPlayer(context: Context) : LocalPlayback(context) {
     private var mCurrentMediaPlayer = MediaPlayer()
+    @RequiresApi(Build.VERSION_CODES.S)
+    private var hapticGenerator: HapticGenerator? = null
     private var mNextMediaPlayer: MediaPlayer? = null
     override var callbacks: PlaybackCallbacks? = null
 
@@ -117,10 +123,15 @@ class MultiPlayer(context: Context) : LocalPlayback(context) {
     /**
      * Starts or resumes playback.
      */
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun start(): Boolean {
         super.start()
         return try {
             mCurrentMediaPlayer.start()
+            if (isHapticGeneratorActive) {
+                hapticGenerator = HapticGenerator.create(audioSessionId)
+                hapticGenerator?.setEnabled(true)
+            }
             true
         } catch (e: IllegalStateException) {
             false
@@ -139,19 +150,23 @@ class MultiPlayer(context: Context) : LocalPlayback(context) {
     /**
      * Releases resources associated with this MediaPlayer object.
      */
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun release() {
         stop()
         mCurrentMediaPlayer.release()
         mNextMediaPlayer?.release()
+        hapticGenerator?.release()
     }
 
     /**
      * Pauses playback. Call start() to resume.
      */
+    @RequiresApi(Build.VERSION_CODES.S)
     override fun pause(): Boolean {
         super.pause()
         return try {
             mCurrentMediaPlayer.pause()
+            hapticGenerator?.release()
             true
         } catch (e: IllegalStateException) {
             false

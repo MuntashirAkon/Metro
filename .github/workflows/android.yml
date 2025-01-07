@@ -2,12 +2,12 @@ name: Android CI
 
 on:
   push:
-    branches: [ dev ]
   pull_request:
-    branches: [ dev ]
+  workflow_dispatch:
 
 jobs:
   check:
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

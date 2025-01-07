@@ -330,6 +330,9 @@ object PreferenceUtil {
             MANAGE_AUDIO_FOCUS, false
         )
 
+    val isHapticGeneratorActive
+        get() = sharedPreferences.getBoolean(MANAGE_HAPTIC_GENERATOR, false)
+
     val isLockScreen get() = sharedPreferences.getBoolean(LOCK_SCREEN, false)
 
     var lyricsOption
