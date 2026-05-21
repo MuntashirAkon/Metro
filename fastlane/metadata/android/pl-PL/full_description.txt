@@ -1,0 +1,15 @@
+<i>Metro</i> jest rozwidleniem <a href="https://apt.izzysoft.de/fdroid/index/apk/code.name.monkey.retromusic">Retro Music</a> z usuniętym API Google Play i odblokowanymi wszystkimi funkcjami Pro.
+
+<b>Funkcje:</b>
+<ul>
+    <li>Tylko odtwarzanie lokalne (na podstawie MediaStore)</li>
+    <li>Wyłącznik czasowy</li>
+    <li>Przeglądarka folderów</li>
+    <li>Widżety na ekranie głównym</li>
+    <li>Motywy (czarny, ciemny, jasny)</li>
+    <li>Motywy na podstawie odtwarzanych utworów</li>
+    <li>Regulacja głośności</li>
+    <li>Czarna lista</li>
+    <li>Obsługa artysty albumu</li>
+    <li>Automatyczne pobieranie okładek artystów z Last.fm</li>
+</ul>
