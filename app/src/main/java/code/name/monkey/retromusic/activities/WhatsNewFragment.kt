@@ -1,5 +1,6 @@
 package code.name.monkey.retromusic.activities
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -23,6 +24,7 @@ import code.name.monkey.retromusic.Constants
 import code.name.monkey.retromusic.databinding.FragmentWhatsNewBinding
 import code.name.monkey.retromusic.extensions.accentColor
 import code.name.monkey.retromusic.extensions.openUrl
+import code.name.monkey.retromusic.extensions.showToast
 import code.name.monkey.retromusic.util.PreferenceUtil.lastVersion
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import java.nio.charset.StandardCharsets
@@ -87,7 +89,11 @@ class WhatsNewFragment : BottomSheetDialogFragment() {
                 ): Boolean {
                     val url = request?.url ?: return false
                     //you can do checks here e.g. url.host equals to target one
-                    startActivity(Intent(Intent.ACTION_VIEW, url))
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, url))
+                    } catch (e: ActivityNotFoundException) {
+                        showToast("No app found to open this link")
+                    }
                     return true
                 }
             }
