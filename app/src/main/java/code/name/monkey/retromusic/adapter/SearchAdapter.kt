@@ -56,7 +56,14 @@ class SearchAdapter(
 
     override fun getItemViewType(position: Int): Int {
         if (dataSet[position] is Album) return ALBUM
-        if (dataSet[position] is Artist) return if ((dataSet[position] as Artist).isAlbumArtist) ALBUM_ARTIST else ARTIST
+        if (dataSet[position] is Artist) {
+            val artist = dataSet[position] as Artist
+            return when {
+                artist.isMultiArtist -> MULTI_ARTIST
+                artist.isAlbumArtist -> ALBUM_ARTIST
+                else -> ARTIST
+            }
+        }
         if (dataSet[position] is Genre) return GENRE
         if (dataSet[position] is PlaylistWithSongs) return PLAYLIST
         return if (dataSet[position] is Song) SONG else HEADER
@@ -72,7 +79,7 @@ class SearchAdapter(
                 ), viewType
             )
 
-            ALBUM, ARTIST, ALBUM_ARTIST -> ViewHolder(
+            ALBUM, ARTIST, ALBUM_ARTIST, MULTI_ARTIST -> ViewHolder(
                 LayoutInflater.from(activity).inflate(
                     R.layout.item_list_big,
                     parent,
@@ -147,6 +154,16 @@ class SearchAdapter(
                 ).into(holder.image!!)
             }
 
+            MULTI_ARTIST -> {
+                holder.imageTextContainer?.isVisible = true
+                val artist = dataSet[position] as Artist
+                holder.title?.text = artist.name
+                holder.text?.text = MusicUtil.getArtistInfoString(activity, artist)
+                Glide.with(activity).asDrawable().artistImageOptions(artist).load(
+                    RetroGlideExtension.getArtistModel(artist)
+                ).into(holder.image!!)
+            }
+
             else -> {
                 holder.title?.text = dataSet[position].toString()
                 holder.title?.setTextColor(ThemeStore.accentColor(activity))
@@ -175,7 +192,7 @@ class SearchAdapter(
 
             when (itemViewType) {
                 ALBUM -> setImageTransitionName(activity.getString(R.string.transition_album_art))
-                ARTIST -> setImageTransitionName(activity.getString(R.string.transition_artist_image))
+                ARTIST, ALBUM_ARTIST, MULTI_ARTIST -> setImageTransitionName(activity.getString(R.string.transition_artist_image))
                 else -> {
                     val container = itemView.findViewById<View>(R.id.imageContainer)
                     container?.isVisible = false
@@ -203,6 +220,13 @@ class SearchAdapter(
                 ALBUM_ARTIST -> {
                     activity.findNavController(R.id.fragment_container).navigate(
                         R.id.albumArtistDetailsFragment,
+                        bundleOf(EXTRA_ARTIST_NAME to (item as Artist).name)
+                    )
+                }
+
+                MULTI_ARTIST -> {
+                    activity.findNavController(R.id.fragment_container).navigate(
+                        R.id.multiArtistDetailsFragment,
                         bundleOf(EXTRA_ARTIST_NAME to (item as Artist).name)
                     )
                 }
@@ -237,5 +261,6 @@ class SearchAdapter(
         private const val GENRE = 4
         private const val PLAYLIST = 5
         private const val ALBUM_ARTIST = 6
+        private const val MULTI_ARTIST = 7
     }
 }

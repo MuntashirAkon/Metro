@@ -130,11 +130,12 @@ private val viewModules = module {
         )
     }
 
-    viewModel { (artistId: Long?, artistName: String?) ->
+    viewModel { (artistId: Long?, artistName: String?, isMultiArtist: Boolean?) ->
         ArtistDetailsViewModel(
             get(),
             artistId,
-            artistName
+            artistName,
+            isMultiArtist ?: false
         )
     }
 

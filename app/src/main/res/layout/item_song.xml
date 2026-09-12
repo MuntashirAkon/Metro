@@ -50,24 +50,31 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:text="@tools:sample/lorem/random" />
 
+    <!--
+        text2 (artist name) now has a real end constraint tied to @id/time
+        with a flexible 0dp width + ellipsize, so a long artist name truncates
+        instead of visually overlapping the duration text next to it.
+    -->
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/text2"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="0"
         android:layout_marginTop="4dp"
-        android:layout_marginHorizontal="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
         android:maxLines="1"
+        android:ellipsize="end"
         android:textAppearance="@style/TextViewCaption"
+        app:layout_constraintHorizontal_bias="0"
         app:layout_constraintStart_toEndOf="@id/imageContainer"
-        app:layout_constraintTop_toBottomOf="@id/title"
-        tools:text="@tools:sample/full_names" />
+        app:layout_constraintEnd_toStartOf="@id/time"
+        app:layout_constraintTop_toBottomOf="@id/title" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="0"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="4dp"
         android:layout_marginHorizontal="8dp"
         android:maxLines="1"

@@ -151,6 +151,14 @@ class AlbumsFragment : AbsRecyclerViewCustomGridSizeFragment<AlbumAdapter, GridL
         val layoutItem = menu.findItem(R.id.action_layout_type)
         setupLayoutMenu(layoutItem.subMenu!!)
         setUpSortOrderMenu(menu.findItem(R.id.action_sort_order).subMenu!!)
+        setupIncludeSinglesMenu(menu)
+    }
+
+    private fun setupIncludeSinglesMenu(menu: Menu) {
+        menu.add(0, R.id.action_include_singles, 0, "Include singles").apply {
+            isCheckable = true
+            isChecked = PreferenceUtil.includeSingles
+        }
     }
 
     private fun setUpSortOrderMenu(
@@ -258,7 +266,22 @@ class AlbumsFragment : AbsRecyclerViewCustomGridSizeFragment<AlbumAdapter, GridL
         if (handleSortOrderMenuItem(item)) {
             return true
         }
+        if (handleIncludeSinglesMenu(item)) {
+            return true
+        }
         return super.onMenuItemSelected(item)
+    }
+
+    private fun handleIncludeSinglesMenu(item: MenuItem): Boolean {
+        return if (item.itemId == R.id.action_include_singles) {
+            val newValue = !item.isChecked
+            PreferenceUtil.includeSingles = newValue
+            item.isChecked = newValue
+            libraryViewModel.forceReload(ReloadType.Albums)
+            true
+        } else {
+            false
+        }
     }
 
     private fun handleSortOrderMenuItem(

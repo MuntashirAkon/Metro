@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Hemanth Savarala.
+ * Copyright (c) 2019 Hemanth Savarla.
  *
  * Licensed under the GNU General Public License v3
  *
@@ -22,6 +22,8 @@ import code.name.monkey.retromusic.db.*
 import code.name.monkey.retromusic.fragments.search.Filter
 import code.name.monkey.retromusic.model.*
 import code.name.monkey.retromusic.model.smartplaylist.NotPlayedPlaylist
+import code.name.monkey.retromusic.network.LastFmBiographyFetcher
+import code.name.monkey.retromusic.util.PreferenceUtil
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +40,7 @@ interface Repository {
     suspend fun allSongs(): List<Song>
     suspend fun fetchArtists(): List<Artist>
     suspend fun albumArtists(): List<Artist>
+    suspend fun fetchMultiArtists(): List<Artist>
     suspend fun fetchLegacyPlaylist(): List<Playlist>
     suspend fun fetchGenres(): List<Genre>
     suspend fun search(query: String?, filter: Filter): MutableList<Any>
@@ -45,6 +48,8 @@ interface Repository {
     suspend fun getGenre(genreId: Long): List<Song>
     suspend fun artistById(artistId: Long): Artist
     suspend fun albumArtistByName(name: String): Artist
+    suspend fun multiArtistByName(name: String): Artist
+    suspend fun artistBiography(artistName: String): String?
     suspend fun recentArtists(): List<Artist>
     suspend fun topArtists(): List<Artist>
     suspend fun topAlbums(): List<Album>
@@ -118,7 +123,8 @@ class RealRepository(
     override fun getSongByGenre(genreId: Long): Song = genreRepository.song(genreId)
 
     override suspend fun searchArtists(query: String): List<Artist> =
-        artistRepository.artists(query)
+    if (PreferenceUtil.multiArtistsEnabled) artistRepository.multiArtists(query)
+    else artistRepository.artists(query)
 
     override suspend fun fetchAlbums(): List<Album> = albumRepository.albums()
 
@@ -130,10 +136,18 @@ class RealRepository(
 
     override suspend fun albumArtists(): List<Artist> = artistRepository.albumArtists()
 
+    override suspend fun fetchMultiArtists(): List<Artist> = artistRepository.multiArtists()
+
     override suspend fun artistById(artistId: Long): Artist = artistRepository.artist(artistId)
 
     override suspend fun albumArtistByName(name: String): Artist =
         artistRepository.albumArtist(name)
+
+    override suspend fun multiArtistByName(name: String): Artist =
+        artistRepository.multiArtistByName(name)
+
+    override suspend fun artistBiography(artistName: String): String? =
+        LastFmBiographyFetcher.fetchBiography(context, artistName)
 
     override suspend fun recentArtists(): List<Artist> = lastAddedRepository.recentArtists()
 

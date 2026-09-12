@@ -46,7 +46,11 @@ class RealLastAddedRepository(
     }
 
     override fun recentArtists(): List<Artist> {
-        return artistRepository.splitIntoArtists(recentAlbums())
+        return if (PreferenceUtil.multiArtistsEnabled) {
+            artistRepository.splitIntoMultiArtists(recentSongs())
+        } else {
+            artistRepository.splitIntoArtists(recentAlbums())
+        }
     }
 
     private fun makeLastAddedCursor(): Cursor? {

@@ -37,6 +37,7 @@ import code.name.monkey.retromusic.EXTRA_ARTIST_NAME
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.activities.tageditor.AbsTagEditorActivity
 import code.name.monkey.retromusic.activities.tageditor.AlbumTagEditorActivity
+import code.name.monkey.retromusic.adapter.ArtistPickerAdapter
 import code.name.monkey.retromusic.adapter.album.HorizontalAlbumAdapter
 import code.name.monkey.retromusic.adapter.song.SimpleSongAdapter
 import code.name.monkey.retromusic.databinding.FragmentAlbumDetailsBinding
@@ -60,6 +61,7 @@ import code.name.monkey.retromusic.model.Artist
 import code.name.monkey.retromusic.repository.RealRepository
 import code.name.monkey.retromusic.util.*
 import com.bumptech.glide.Glide
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.transition.MaterialArcMotion
 import com.google.android.material.transition.MaterialContainerTransform
@@ -123,6 +125,31 @@ class AlbumDetailsFragment : AbsMainActivityFragment(R.layout.fragment_album_det
 
         setupRecyclerView()
         binding.artistImage.setOnClickListener { artistView ->
+            // If this album's artist tag is actually a combined tag (e.g.
+            // "Alan Walker, Au/Ra, Tomine Harket") and multi-artist mode is
+            // on, let the user pick which one to open - same behavior as the
+            // Now Playing screen - instead of always opening the raw combined
+            // entry or guessing a single one.
+            if (PreferenceUtil.multiArtistsEnabled) {
+                val nameToSplit = if (albumArtistExists) album.albumArtist!! else album.artistName
+                val splitNames = ArtistTagUtil.splitArtistNames(nameToSplit)
+                when {
+                    splitNames.size > 1 -> {
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            val repository = get<RealRepository>()
+                            val artists = splitNames.map { repository.multiArtistByName(it) }
+                            withContext(Dispatchers.Main) {
+                                showArtistPickerDialog(artists)
+                            }
+                        }
+                    }
+
+                    splitNames.size == 1 -> goToMultiArtistFromAlbum(artistView, splitNames[0])
+                    else -> goToMultiArtistFromAlbum(artistView, album.artistName)
+                }
+                return@setOnClickListener
+            }
+
             if (albumArtistExists) {
                 findActivityNavController(R.id.fragment_container)
                     .navigate(
@@ -154,6 +181,29 @@ class AlbumDetailsFragment : AbsMainActivityFragment(R.layout.fragment_album_det
 
         binding.appBarLayout?.statusBarForeground =
             MaterialShapeDrawable.createWithElevationOverlay(requireContext())
+    }
+
+    private fun showArtistPickerDialog(artists: List<Artist>) {
+        val adapter = ArtistPickerAdapter(requireActivity() as AppCompatActivity, artists)
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.action_go_to_artist)
+            .setAdapter(adapter) { _, which ->
+                findActivityNavController(R.id.fragment_container).navigate(
+                    R.id.multiArtistDetailsFragment,
+                    bundleOf(EXTRA_ARTIST_NAME to artists[which].name)
+                )
+            }
+            .show()
+    }
+
+    private fun goToMultiArtistFromAlbum(artistView: View, artistName: String) {
+        findActivityNavController(R.id.fragment_container)
+            .navigate(
+                R.id.multiArtistDetailsFragment,
+                bundleOf(EXTRA_ARTIST_NAME to artistName),
+                null,
+                FragmentNavigatorExtras(artistView to artistName)
+            )
     }
 
     override fun onDestroy() {
@@ -198,7 +248,7 @@ class AlbumDetailsFragment : AbsMainActivityFragment(R.layout.fragment_album_det
         } else {
             binding.albumText.text = String.format(
                 "%s • %s • %s",
-                album.artistName,
+                if (albumArtistExists) album.albumArtist else album.artistName,
                 MusicUtil.getYearString(album.year),
                 MusicUtil.getReadableDurationString(MusicUtil.getTotalDuration(album.songs))
             )

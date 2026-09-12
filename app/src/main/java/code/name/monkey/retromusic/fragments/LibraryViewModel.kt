@@ -95,14 +95,27 @@ class LibraryViewModel(
     }
 
     private suspend fun fetchAlbums() {
-        albums.postValue(repository.fetchAlbums())
+        val allAlbums = repository.fetchAlbums()
+        albums.postValue(
+            if (PreferenceUtil.includeSingles) {
+                allAlbums
+            } else {
+                allAlbums.filter { it.songCount >= 2 }
+            }
+        )
     }
 
     private suspend fun fetchArtists() {
-        if (PreferenceUtil.albumArtistsOnly) {
-            artists.postValue(repository.albumArtists())
-        } else {
-            artists.postValue(repository.fetchArtists())
+        when {
+            PreferenceUtil.multiArtistsEnabled -> {
+                artists.postValue(repository.fetchMultiArtists())
+            }
+            PreferenceUtil.albumArtistsOnly -> {
+                artists.postValue(repository.albumArtists())
+            }
+            else -> {
+                artists.postValue(repository.fetchArtists())
+            }
         }
     }
 

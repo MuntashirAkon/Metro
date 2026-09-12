@@ -16,7 +16,7 @@
     app:layout_constraintTop_toTopOf="parent">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="wrap_content"
+        android:layout_width="156dp"
         android:layout_height="wrap_content">
 
         <androidx.appcompat.widget.AppCompatImageView
@@ -24,27 +24,52 @@
             android:layout_width="156dp"
             android:layout_height="156dp"
             android:scaleType="centerCrop"
-            app:layout_constraintBottom_toTopOf="@+id/title"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/default_album_art"
             tools:src="@tools:sample/avatars" />
 
+        <!--
+            عنوان الألبوم: بقى سطر واحد بس مع نقط في الآخر (ellipsize) بدل
+            التعارض القديم بين singleLine="true" و maxLines="2"، والحجم
+            اتصغر شوية (13sp بدل TextViewBody1 اللي كان أكبر).
+        -->
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
+            android:layout_marginTop="8dp"
+            android:layout_marginHorizontal="8dp"
             android:ellipsize="end"
-            android:maxLines="2"
-            android:padding="8dp"
-            android:singleLine="true"
-            android:textAppearance="@style/TextViewBody1"
+            android:maxLines="1"
+            android:textAppearance="@style/TextViewBody2"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/image"
+            tools:ignore="MissingPrefix"
+            tools:text="@tools:sample/full_names" />
+
+        <!--
+            الجديد: اسم الفنان تحت عنوان الألبوم مباشرة. الـ id لازم يكون
+            "text" بالظبط عشان يتوافق مع AlbumAdapter.ViewHolder وgetAlbumText()
+            الموجودين أصلاً في الكود (كانوا بيحاولوا يكتبوا فيه، بس مكنش
+            موجود في اللاي أوت خالص فمكنش بيظهر حاجة).
+        -->
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_marginHorizontal="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextViewCaption"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            tools:ignore="MissingPrefix"
+            app:layout_constraintTop_toBottomOf="@id/title"
             tools:text="@tools:sample/full_names" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

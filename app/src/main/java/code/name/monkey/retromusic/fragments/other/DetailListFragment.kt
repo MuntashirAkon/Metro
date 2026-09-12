@@ -23,6 +23,7 @@ import android.view.View
 import androidx.core.os.bundleOf
 import androidx.core.view.doOnPreDraw
 import androidx.core.view.isVisible
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -222,11 +223,17 @@ class DetailListFragment : AbsMainActivityFragment(R.layout.fragment_playlist_de
 
 
     override fun onArtist(artistId: Long, view: View) {
+        val navOptions = NavOptions.Builder()
+            .setEnterAnim(R.anim.nav_slide_in_right)
+            .setExitAnim(R.anim.nav_slide_out_left)
+            .setPopEnterAnim(R.anim.nav_slide_in_left)
+            .setPopExitAnim(R.anim.nav_slide_out_right)
+            .build()
+
         findNavController().navigate(
             R.id.artistDetailsFragment,
             bundleOf(EXTRA_ARTIST_ID to artistId),
-            null,
-            FragmentNavigatorExtras(view to artistId.toString())
+            navOptions
         )
     }
 

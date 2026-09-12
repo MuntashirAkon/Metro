@@ -1,0 +1,64 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ dev ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Generate Keystore
+        run: |
+          keytool -genkey -v \
+            -keystore keystore.jks \
+            -alias metro-release \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass 01011412881 \
+            -keypass 01011412881 \
+            -dname "CN=Metro, OU=App, O=App, L=Cairo, S=Cairo, C=EG"
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Align APK
+        run: |
+          ZIPALIGN=$(find $ANDROID_HOME/build-tools -name "zipalign" | sort -r | head -1)
+          $ZIPALIGN -v -f 4 \
+            app/build/outputs/apk/release/app-release-unsigned.apk \
+            app/build/outputs/apk/release/app-release-aligned.apk
+
+      - name: Sign APK
+        run: |
+          APKSIGNER=$(find $ANDROID_HOME/build-tools -name "apksigner" | sort -r | head -1)
+          $APKSIGNER sign \
+            --ks keystore.jks \
+            --ks-pass pass:01011412881 \
+            --key-pass pass:01011412881 \
+            --ks-key-alias metro-release \
+            --out app/build/outputs/apk/release/app-release-signed.apk \
+            app/build/outputs/apk/release/app-release-aligned.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Metro
+          path: app/build/outputs/apk/release/app-release-signed.apk

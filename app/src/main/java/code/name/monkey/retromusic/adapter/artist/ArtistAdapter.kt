@@ -33,6 +33,7 @@ import code.name.monkey.retromusic.glide.RetroMusicColoredTarget
 import code.name.monkey.retromusic.helper.menu.SongsMenuHelper
 import code.name.monkey.retromusic.interfaces.IAlbumArtistClickListener
 import code.name.monkey.retromusic.interfaces.IArtistClickListener
+import code.name.monkey.retromusic.interfaces.IMultiArtistClickListener
 import code.name.monkey.retromusic.model.Artist
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.util.MusicUtil
@@ -46,11 +47,13 @@ class ArtistAdapter(
     var dataSet: List<Artist>,
     var itemLayoutRes: Int,
     val IArtistClickListener: IArtistClickListener,
-    val IAlbumArtistClickListener: IAlbumArtistClickListener? = null
+    val IAlbumArtistClickListener: IAlbumArtistClickListener? = null,
+    val IMultiArtistClickListener: IMultiArtistClickListener? = null
 ) : AbsMultiSelectAdapter<ArtistAdapter.ViewHolder, Artist>(activity, R.menu.menu_media_selection),
     PopupTextProvider {
 
-    var albumArtistsOnly = false
+    var albumArtistsOnly = PreferenceUtil.albumArtistsOnly
+    var multiArtistsEnabled = PreferenceUtil.multiArtistsEnabled
 
     init {
         this.setHasStableIds(true)
@@ -61,6 +64,7 @@ class ArtistAdapter(
         this.dataSet = dataSet
         notifyDataSetChanged()
         albumArtistsOnly = PreferenceUtil.albumArtistsOnly
+        multiArtistsEnabled = PreferenceUtil.multiArtistsEnabled
     }
 
     override fun getItemId(position: Int): Long {
@@ -88,12 +92,11 @@ class ArtistAdapter(
         holder.title?.text = artist.name
         holder.text?.hide()
         val transitionName =
-            if (albumArtistsOnly) artist.name else artist.id.toString()
-        if (holder.imageContainer != null) {
-            holder.imageContainer?.transitionName = transitionName
-        } else {
-            holder.image?.transitionName = transitionName
-        }
+            if (albumArtistsOnly || multiArtistsEnabled) artist.name else artist.id.toString()
+        // الـ Container Transform (زي Apple Music) بيحول الكارت كله في القائمة لشاشة كاملة،
+        // مش صورة صغيرة بس تتحول لجزء من الشاشة. فالـ shared element المفروض يبقى
+        // itemView (الكارت بالكامل) مش image لوحدها.
+        holder.itemView.transitionName = transitionName
         loadArtistImage(artist, holder)
     }
 
@@ -169,11 +172,17 @@ class ArtistAdapter(
                 toggleChecked(layoutPosition)
             } else {
                 val artist = dataSet[layoutPosition]
-                image?.let {
-                    if (albumArtistsOnly && IAlbumArtistClickListener != null) {
-                        IAlbumArtistClickListener.onAlbumArtist(artist.name, imageContainer ?: it)
-                    } else {
-                        IArtistClickListener.onArtist(artist.id, imageContainer ?: it)
+                // بنبعت itemView (الكارت كله) كـ shared element، مش الصورة بس،
+                // عشان الـ Container Transform يحول الكارت بالكامل لشاشة التفاصيل كلها.
+                when {
+                    multiArtistsEnabled && IMultiArtistClickListener != null -> {
+                        IMultiArtistClickListener.onMultiArtist(artist.name, itemView)
+                    }
+                    albumArtistsOnly && IAlbumArtistClickListener != null -> {
+                        IAlbumArtistClickListener.onAlbumArtist(artist.name, itemView)
+                    }
+                    else -> {
+                        IArtistClickListener.onArtist(artist.id, itemView)
                     }
                 }
             }

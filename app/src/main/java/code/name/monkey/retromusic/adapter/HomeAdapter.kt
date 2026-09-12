@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.os.bundleOf
 import androidx.fragment.app.findFragment
+import androidx.navigation.NavOptions
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.recyclerview.widget.GridLayoutManager
@@ -34,6 +35,7 @@ import code.name.monkey.retromusic.adapter.song.SongAdapter
 import code.name.monkey.retromusic.fragments.home.HomeFragment
 import code.name.monkey.retromusic.interfaces.IAlbumClickListener
 import code.name.monkey.retromusic.interfaces.IArtistClickListener
+import code.name.monkey.retromusic.interfaces.IMultiArtistClickListener
 import code.name.monkey.retromusic.model.Album
 import code.name.monkey.retromusic.model.Artist
 import code.name.monkey.retromusic.model.Home
@@ -41,7 +43,8 @@ import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.util.PreferenceUtil
 
 class HomeAdapter(private val activity: AppCompatActivity) :
-    RecyclerView.Adapter<RecyclerView.ViewHolder>(), IArtistClickListener, IAlbumClickListener {
+    RecyclerView.Adapter<RecyclerView.ViewHolder>(), IArtistClickListener, IAlbumClickListener,
+    IMultiArtistClickListener {
 
     private var list = listOf<Home>()
 
@@ -178,7 +181,7 @@ class HomeAdapter(private val activity: AppCompatActivity) :
     }
 
     private fun artistsAdapter(artists: List<Artist>) =
-        ArtistAdapter(activity, artists, PreferenceUtil.homeArtistGridStyle, this)
+        ArtistAdapter(activity, artists, PreferenceUtil.homeArtistGridStyle, this, null, this)
 
     private fun albumAdapter(albums: List<Album>) =
         AlbumAdapter(activity, albums, PreferenceUtil.homeAlbumGridStyle, this)
@@ -190,12 +193,27 @@ class HomeAdapter(private val activity: AppCompatActivity) :
         LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
 
     override fun onArtist(artistId: Long, view: View) {
+        val navOptions = NavOptions.Builder()
+            .setEnterAnim(R.anim.nav_slide_in_right)
+            .setExitAnim(R.anim.nav_slide_out_left)
+            .setPopEnterAnim(R.anim.nav_slide_in_left)
+            .setPopExitAnim(R.anim.nav_slide_out_right)
+            .build()
+
         activity.findNavController(R.id.fragment_container).navigate(
             R.id.artistDetailsFragment,
             bundleOf(EXTRA_ARTIST_ID to artistId),
+            navOptions
+        )
+    }
+
+    override fun onMultiArtist(artistName: String, view: View) {
+        activity.findNavController(R.id.fragment_container).navigate(
+            R.id.multiArtistDetailsFragment,
+            bundleOf(EXTRA_ARTIST_NAME to artistName),
             null,
             FragmentNavigatorExtras(
-                view to artistId.toString()
+                view to artistName
             )
         )
     }

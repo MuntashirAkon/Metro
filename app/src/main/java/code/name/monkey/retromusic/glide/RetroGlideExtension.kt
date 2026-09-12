@@ -30,7 +30,6 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.bumptech.glide.request.target.Target.SIZE_ORIGINAL
 import com.bumptech.glide.request.transition.DrawableCrossFadeFactory
 import com.bumptech.glide.request.transition.Transition
 import com.bumptech.glide.signature.MediaStoreSignature
@@ -45,8 +44,13 @@ object RetroGlideExtension {
     private const val DEFAULT_ALBUM_IMAGE = R.drawable.default_album_art
     private const val DEFAULT_ERROR_IMAGE_BANNER = R.drawable.material_design_default
 
-    private val DEFAULT_DISK_CACHE_STRATEGY_ARTIST = DiskCacheStrategy.RESOURCE
-    private val DEFAULT_DISK_CACHE_STRATEGY = DiskCacheStrategy.NONE
+    // AUTOMATIC بتخزّن البيانات الخام اللي اتنزلت من الشبكة (مش الصورة بعد ما
+    // اتصغّرت لحجم معين). ده مهم عشان صورة الفنان بتتحمّل بحجمين مختلفين -
+    // صغير في الليست وكبير في الهيدر بصفحة التفاصيل - فلو خزّنا النسخة
+    // المعالجة بس (RESOURCE)، الحجم التاني مكانش هيلاقي تطابق وكان هيضطر
+    // يعيد التحميل من الإنترنت من الصفر تاني بدل ما يعمل فك تشفير محلي بس.
+    private val DEFAULT_DISK_CACHE_STRATEGY_ARTIST = DiskCacheStrategy.AUTOMATIC
+    private val DEFAULT_DISK_CACHE_STRATEGY = DiskCacheStrategy.RESOURCE
 
     private const val DEFAULT_ANIMATION = android.R.anim.fade_in
 
@@ -101,7 +105,12 @@ object RetroGlideExtension {
             .priority(Priority.LOW)
             .error(getDrawable(DEFAULT_ARTIST_IMAGE))
             .placeholder(getDrawable(DEFAULT_ARTIST_IMAGE))
-            .override(SIZE_ORIGINAL, SIZE_ORIGINAL)
+            // ما بنعملش .override(SIZE_ORIGINAL, SIZE_ORIGINAL) هنا عمدًا:
+            // ده كان بيجبر Glide يفك تشفير الصورة بحجمها الأصلي بالكامل (ممكن
+            // يكون آلاف البكسلات من Deezer) بغض النظر عن حجم الـ ImageView
+            // الفعلي على الشاشة. من غير override، Glide بياخد قياس الـ target
+            // view تلقائيًا ويفك تشفير بالحجم المطلوب بس - نفس الشكل بالظبط،
+            // معالجة وذاكرة أقل بكتير.
             .signature(createSignature(artist))
     }
 

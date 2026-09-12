@@ -261,4 +261,9 @@
         <item name="thumbRadius">6dp</item>
         <item name="haloRadius">18dp</item>
     </style>
+
+    <style name="RoundedCornersSmall" parent="ShapeAppearance.MaterialComponents">
+        <item name="cornerSize">8dp</item>
+    </style>
+
 </resources>

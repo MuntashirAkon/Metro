@@ -22,6 +22,7 @@ import code.name.monkey.retromusic.model.Album
 import code.name.monkey.retromusic.model.Artist
 import code.name.monkey.retromusic.model.Genre
 import code.name.monkey.retromusic.model.Song
+import code.name.monkey.retromusic.util.PreferenceUtil
 
 class RealSearchRepository(
     private val songRepository: SongRepository,
@@ -49,7 +50,11 @@ class RealSearchRepository(
             /** Artists **/
             val artists: List<Artist> =
                 if (filter == Filter.ARTISTS || filter == Filter.NO_FILTER) {
-                    artistRepository.artists(searchString)
+                    if (PreferenceUtil.multiArtistsEnabled) {
+                        artistRepository.multiArtists(searchString)
+                    } else {
+                        artistRepository.artists(searchString)
+                    }
                 } else {
                     emptyList()
                 }

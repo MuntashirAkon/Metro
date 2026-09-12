@@ -16,6 +16,39 @@
         android:title="@string/action_add_to_playlist"
         app:showAsAction="never" />
 
+    <!--
+        نُقلت هنا بدل الأيقونة اللي كانت جنب "Songs".
+        نفس الـ IDs والعناوين اللي كانت في menu_artist_song_sort_order.xml
+        عشان handleSortOrderMenuItem() في AbsArtistDetailsFragment.kt يتعامل
+        معاها زي ما هي من غير أي تغيير في المنطق.
+        "Sort by" هنا نص ثابت (hardcoded) — يفضل تتنقل لـ strings.xml
+        لو المشروع بيدعم لغات تانية.
+    -->
+    <item
+        android:id="@+id/action_sort_by"
+        android:title="Sort by"
+        app:showAsAction="never">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/action_sort_order_title"
+                    android:title="@string/sort_order_a_z" />
+                <item
+                    android:id="@+id/action_sort_order_title_desc"
+                    android:title="@string/sort_order_z_a" />
+                <item
+                    android:id="@+id/action_sort_order_album"
+                    android:title="@string/sort_order_album" />
+                <item
+                    android:id="@+id/action_sort_order_year"
+                    android:title="@string/sort_order_year" />
+                <item
+                    android:id="@+id/action_sort_order_song_duration"
+                    android:title="@string/song_duration" />
+            </group>
+        </menu>
+    </item>
+
     <item
         android:id="@+id/action_set_artist_image"
         android:title="@string/set_artist_image"

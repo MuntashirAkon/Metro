@@ -15,9 +15,13 @@
 package code.name.monkey.retromusic.activities
 
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.WindowManager
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.contains
 import androidx.navigation.ui.setupWithNavController
@@ -45,13 +49,29 @@ class MainActivity : AbsSlidingMusicPanelActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // تفعيل العرض الكامل للشاشة Edge-to-Edge وإزالة الشريط الأسود
+        setupEdgeToEdge()
+
         setTaskDescriptionColorAuto()
-        hideStatusBar()
         updateTabs()
 
         setupNavigationController()
 
         WhatsNewFragment.showChangeLog(this)
+    }
+
+    /**
+     * تجعل المحتوى يمتد بالكامل خلف الـ Status Bar وتزيل أي خطوط أو أشرطة سوداء
+     */
+    private fun setupEdgeToEdge() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            window.attributes.layoutInDisplayCutoutMode =
+                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
     }
 
     private fun setupNavigationController() {
@@ -77,6 +97,7 @@ class MainActivity : AbsSlidingMusicPanelActivity() {
         }
         navController.graph = navGraph
         navigationView.setupWithNavController(navController)
+        
         // Scroll Fragment to top
         navigationView.setOnItemReselectedListener {
             currentFragment(R.id.fragment_container).apply {

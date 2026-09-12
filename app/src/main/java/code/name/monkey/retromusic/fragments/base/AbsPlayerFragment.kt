@@ -39,6 +39,8 @@ import androidx.viewpager.widget.ViewPager
 import code.name.monkey.appthemehelper.util.VersionUtils
 import code.name.monkey.retromusic.EXTRA_ALBUM_ID
 import code.name.monkey.retromusic.EXTRA_ARTIST_ID
+import code.name.monkey.retromusic.EXTRA_ARTIST_NAME
+import code.name.monkey.retromusic.adapter.ArtistPickerAdapter
 import code.name.monkey.retromusic.extensions.hide
 import code.name.monkey.retromusic.R
 import code.name.monkey.retromusic.activities.MainActivity
@@ -59,12 +61,15 @@ import code.name.monkey.retromusic.fragments.player.PlayerAlbumCoverFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.interfaces.IPaletteColorHolder
 import code.name.monkey.retromusic.model.Song
+import code.name.monkey.retromusic.model.Artist
 import code.name.monkey.retromusic.repository.RealRepository
 import code.name.monkey.retromusic.service.MusicService
+import code.name.monkey.retromusic.util.ArtistTagUtil
 import code.name.monkey.retromusic.util.NavigationUtil
 import code.name.monkey.retromusic.util.PreferenceUtil
 import code.name.monkey.retromusic.util.RingtoneManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
@@ -409,6 +414,34 @@ abstract class AbsPlayerFragment(@LayoutRes layout: Int) : AbsMusicServiceFragme
 fun goToArtist(activity: Activity) {
     if (activity !is MainActivity) return
     val song = MusicPlayerRemote.currentSong
+
+    // When multi-artist mode is on, always resolve the artist by (split) name
+    // rather than by the raw MediaStore artistId of the current song. A solo
+    // track's artistId only matches other solo tracks by that artist - it
+    // won't include tracks where they're credited alongside someone else
+    // (different combined tag -> different artistId). Going by name instead
+    // ensures "Akon" shows every song he's on, whether solo or featured.
+    if (PreferenceUtil.multiArtistsEnabled) {
+        val splitNames = ArtistTagUtil.splitArtistNames(song.artistName)
+        when {
+            splitNames.size > 1 -> {
+                // Fetch the full Artist (with albums, for cover art) for each
+                // split name before showing the picker, so each row can show
+                // that artist's image instead of just plain text.
+                activity.lifecycleScope.launch(IO) {
+                    val repository = activity.get<RealRepository>()
+                    val artists = splitNames.map { repository.multiArtistByName(it) }
+                    withContext(Main) {
+                        showArtistPickerDialog(activity, artists)
+                    }
+                }
+            }
+            splitNames.size == 1 -> goToMultiArtist(activity, splitNames[0])
+            else -> goToMultiArtist(activity, song.artistName)
+        }
+        return
+    }
+
     activity.apply {
 
         // Remove exit transition of current fragment so
@@ -424,6 +457,33 @@ fun goToArtist(activity: Activity) {
         findNavController(R.id.fragment_container).navigate(
             R.id.artistDetailsFragment,
             bundleOf(EXTRA_ARTIST_ID to song.artistId)
+        )
+    }
+}
+
+private fun showArtistPickerDialog(activity: MainActivity, artists: List<Artist>) {
+    val adapter = ArtistPickerAdapter(activity, artists)
+    MaterialAlertDialogBuilder(activity)
+        .setTitle(R.string.action_go_to_artist)
+        .setAdapter(adapter) { _, which ->
+            goToMultiArtist(activity, artists[which].name)
+        }
+        .show()
+}
+
+private fun goToMultiArtist(activity: MainActivity, artistName: String) {
+    activity.apply {
+        currentFragment(R.id.fragment_container)?.exitTransition = null
+
+        //Hide Bottom Bar First, else Bottom Sheet doesn't collapse fully
+        setBottomNavVisibility(false)
+        if (getBottomSheetBehavior().state == BottomSheetBehavior.STATE_EXPANDED) {
+            collapsePanel()
+        }
+
+        findNavController(R.id.fragment_container).navigate(
+            R.id.multiArtistDetailsFragment,
+            bundleOf(EXTRA_ARTIST_NAME to artistName)
         )
     }
 }

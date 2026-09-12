@@ -14,10 +14,14 @@
 
 package code.name.monkey.retromusic.model
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 data class Album(
     val id: Long,
     val songs: List<Song>
-) {
+) : Parcelable {
 
     val title: String
         get() = safeGetFirstSong().albumName

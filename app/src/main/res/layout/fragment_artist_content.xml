@@ -1,116 +1,305 @@
 <?xml version="1.0" encoding="utf-8"?>
-<code.name.monkey.retromusic.views.insets.InsetsConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingBottom="@dimen/mini_player_height">
+    android:paddingBottom="32dp">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/playAction"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="4dp"
-        android:paddingVertical="10dp"
-        android:text="@string/action_play_all"
-        android:textAppearance="@style/TextViewButton"
-        android:textColor="?android:attr/textColorPrimary"
-        app:backgroundTint="?attr/colorSurface"
-        app:icon="@drawable/ic_play_arrow"
-        app:layout_constraintEnd_toStartOf="@+id/shuffleAction"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/shuffleAction"
-        style="@style/Widget.Material3.Button.Icon"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginEnd="16dp"
-        android:paddingVertical="10dp"
-        android:text="@string/shuffle"
-        android:textAppearance="@style/TextViewButton"
-        app:icon="@drawable/ic_shuffle"
-        app:layout_constraintBottom_toBottomOf="@+id/playAction"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/playAction"
-        app:layout_constraintTop_toTopOf="@+id/playAction" />
-
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/albumTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:text="@string/albums"
-        android:textAppearance="@style/TextViewHeadline6"
-        android:textColor="?android:attr/textColorPrimary"
-        android:textStyle="bold"
-        app:layout_constrainedWidth="true"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/playAction" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/albumRecyclerView"
+    <!-- أزرار التحكم -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:nestedScrollingEnabled="false"
-        android:overScrollMode="@integer/overScrollMode"
-        app:barrierDirection="bottom"
-        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/albumTitle"
-        tools:itemCount="3"
-        tools:listitem="@layout/item_album_card"
-        tools:spanCount="3" />
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="20dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
 
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/songTitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:text="@string/songs"
-        android:textAppearance="@style/TextViewHeadline6"
-        android:textColor="?android:attr/textColorPrimary"
-        android:textStyle="bold"
-        app:layout_constrainedWidth="true"
-        app:layout_constraintEnd_toStartOf="@id/song_sort_order"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/albumRecyclerView" />
+        <!--
+            التلات دواير بقوا بنفس الحجم بالظبط (58dp)، وكل واحدة فيهم بقى
+            جواها طبقة LiquidGlassView زجاج حقيقي (بلور GPU حقيقي + شيدر
+            انكسار/تشتت لوني على أندرويد 13+) بدل الشفافية الثابتة القديمة.
+            الكود في AbsArtistDetailsFragment.kt بينادي setBackdropColor بعد
+            استخراج لون الصفحة، والزر اللي فوق بخلفية شفافة تمامًا عشان
+            الزجاج يبان من وراه.
+        -->
+        <FrameLayout
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:layout_marginEnd="10dp">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/song_sort_order"
-        style="@style/Widget.Material3.Button.IconButton"
-        android:layout_width="wrap_content"
+            <code.name.monkey.retromusic.views.LiquidGlassView
+                android:id="@+id/infoActionGlass"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/infoAction"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:backgroundTint="@android:color/transparent"
+                app:cornerRadius="29dp"
+                app:icon="@drawable/ic_add"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="22dp"
+                app:iconTint="@android:color/white"
+                app:strokeWidth="0dp" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="58dp"
+            android:layout_height="58dp">
+
+            <code.name.monkey.retromusic.views.LiquidGlassView
+                android:id="@+id/playActionGlass"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/playAction"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:backgroundTint="@android:color/transparent"
+                app:tint="@android:color/white"
+                app:elevation="0dp"
+                app:pressedTranslationZ="0dp"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                app:fabCustomSize="58dp"
+                app:iconSize="80dp"
+                app:srcCompat="@drawable/ic_play_arrow" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:layout_marginStart="10dp">
+
+            <code.name.monkey.retromusic.views.LiquidGlassView
+                android:id="@+id/shuffleActionGlass"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/shuffleAction"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:backgroundTint="@android:color/transparent"
+                app:cornerRadius="29dp"
+                app:icon="@drawable/ic_shuffle"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                app:iconSize="22dp"
+                app:iconTint="@android:color/white"
+                app:strokeWidth="0dp" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- قائمة الأغاني -->
+    <RelativeLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:background="?roundSelector"
-        app:icon="@drawable/ic_sort"
-        app:iconSize="24dp"
-        app:iconTint="?colorControlNormal"
-        app:layout_constraintBottom_toBottomOf="@+id/songTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/songTitle"
-        app:layout_constraintTop_toTopOf="@id/songTitle" />
+        android:layout_marginBottom="8dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:id="@+id/songTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:text="Songs"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <!--
+            محل أيقونة الترتيب (اتنقلت لقايمة الثلاث نقاط باسم "Sort by").
+            نص "See all" ثابت (hardcoded) هنا برضه — يفضل ينتقل لـ strings.xml.
+            visibility=gone افتراضيًا، وبتتحكم فيه AbsArtistDetailsFragment.kt
+            حسب عدد أغاني الفنان (بتظهر لو أكتر من 6).
+        -->
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/seeAllSongs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="4dp"
+            android:text="See all"
+            android:textAllCaps="true"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:visibility="visible" />
+    </RelativeLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:nestedScrollingEnabled="false"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/songTitle"
-        tools:listitem="@layout/item_song" />
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:nestedScrollingEnabled="false" />
 
-    <Space
+    <!-- الألبومات -->
+    <TextView
+        android:id="@+id/albumTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="12dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        tools:text="Albums" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/albumRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="72dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/recyclerView" />
-</code.name.monkey.retromusic.views.insets.InsetsConstraintLayout>
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:paddingStart="4dp"
+        android:paddingEnd="16dp" />
+
+    <!-- الأغاني المنفردة -->
+    <TextView
+        android:id="@+id/singlesTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="12dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="Singles"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/singlesRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:paddingStart="4dp"
+        android:paddingEnd="16dp" />
+
+    <!-- الظهور مع فنانين آخرين -->
+    <TextView
+        android:id="@+id/appearsOnTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="12dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="Appears On"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/appearsOnRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:paddingStart="4dp"
+        android:paddingEnd="16dp" />
+
+    <!-- نبذة عن الفنان (Last.fm) -->
+    <TextView
+        android:id="@+id/biographyTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="12dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="Biography"
+        android:textColor="@android:color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!--
+        نفس فكرة الدواير: FrameLayout غلاف بيتحكم في الظهور/الاختفاء (بدل ما
+        كان بيتحكم في CardView نفسها مباشرة)، وجواه LiquidGlassView زجاج حقيقي
+        بحواف دائرية 12dp تطابق حواف الكارت، وفوقه CardView بخلفية شفافة
+        تمامًا عشان الزجاج يبان من وراها.
+    -->
+    <FrameLayout
+        android:id="@+id/biographyCardWrapper"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <code.name.monkey.retromusic.views.LiquidGlassView
+            android:id="@+id/biographyCardGlass"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/biographyCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/biographyText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:lineSpacingExtra="2dp"
+                    android:maxLines="3"
+                    android:textColor="#E6FFFFFF"
+                    android:textSize="14sp"
+                    tools:text="Dua Lipa (born 22 August 1995) is an English singer, songwriter and actress. She is one of the most successful pop artists of her generation," />
+
+                <com.google.android.material.textview.MaterialTextView
+                    android:id="@+id/biographyMore"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:gravity="center_vertical"
+                    android:padding="4dp"
+                    android:text="More"
+                    android:textColor="?attr/colorPrimary"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+    </FrameLayout>
+
+    <!-- مساحة فاضية تحت المحتوى كله - الارتفاع بيتحدد من الكود (ربع ارتفاع
+         الشاشة تقريبًا) عشان يفضل نسبي مهما اختلف حجم الشاشة. -->
+    <View
+        android:id="@+id/bottomSpacer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp" />
+
+</LinearLayout>

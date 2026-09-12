@@ -44,7 +44,7 @@
             app:argType="long" />
     </fragment>
 
-    <fragment
+        <fragment
         android:id="@+id/albumArtistDetailsFragment"
         android:name="code.name.monkey.retromusic.fragments.artists.AlbumArtistDetailsFragment"
         android:label="AlbumArtistDetailsFragment"
@@ -53,6 +53,33 @@
             android:name="extra_artist_name"
             app:argType="string" />
     </fragment>
+
+    <fragment
+        android:id="@+id/multiArtistDetailsFragment"
+        android:name="code.name.monkey.retromusic.fragments.artists.MultiArtistDetailsFragment"
+        android:label="MultiArtistDetailsFragment"
+        tools:layout="@layout/fragment_artist_details">
+        <argument
+            android:name="extra_artist_name"
+            app:argType="string" />
+    </fragment>
+
+    <!--
+        شاشة "كل أغاني الفنان" (See all). الأغاني نفسها بتتبعت جوه الـ bundle
+        وقت الـ navigate() مباشرة (extra_songs) عشان مانحتاجش نعيد الجلب من
+        الـ repository تاني، فمش محتاجة argument معلن هنا. extra_artist_name
+        بس هو المعلن عشان يبقى موثّق كمدخل رسمي للشاشة.
+    -->
+    <fragment
+        android:id="@+id/artistAllSongsFragment"
+        android:name="code.name.monkey.retromusic.fragments.artists.ArtistAllSongsFragment"
+        android:label="ArtistAllSongsFragment"
+        tools:layout="@layout/fragment_artist_all_songs">
+        <argument
+            android:name="extra_artist_name"
+            app:argType="string" />
+    </fragment>
+
 
     <fragment
         android:id="@+id/libraryFragment"
