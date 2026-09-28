@@ -95,3 +95,29 @@ Metro is released under the GNU General Public License v3.0
 
 
 > Please note: Metro is an offline music player app. It doesn't support music downloading or online music streaming.
+
+## LRCLIB integration
+
+This repository is an unofficial Metro fork that adds direct lyrics retrieval through the [LRCLIB](https://lrclib.net/) API.
+
+The integration includes:
+- Direct LRCLIB API requests from the lyrics screen.
+- Synchronized (`.lrc`) lyrics when available.
+- Local LRC storage so retrieved lyrics can be loaded again.
+- Android 11+ compatible app-specific storage for downloaded lyrics.
+- HTTP/1.1 requests and explicit JSON headers for compatibility with LRCLIB/Cloudflare.
+- Error handling and user feedback when lyrics cannot be retrieved or saved.
+
+See [LRCLIB.md](LRCLIB.md) for implementation details.
+
+### Credits
+
+This project is based on **Metro**, originally developed by [MuntashirAkon](https://github.com/MuntashirAkon/Metro) and contributors. The original GPLv3 license and source attributions are retained.
+
+Lyrics are retrieved from **LRCLIB**. This project is an unofficial integration and is not affiliated with or endorsed by the LRCLIB project.
+
+The LRCLIB integration was developed with assistance from **OpenAI ChatGPT** for code analysis, debugging, implementation, and documentation.
+
+### Disclaimer
+
+This is a personal/community fork of Metro. Please refer to the original Metro project and its license for the upstream project terms.
