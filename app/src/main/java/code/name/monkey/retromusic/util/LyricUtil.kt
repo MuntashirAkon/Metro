@@ -13,7 +13,9 @@
  */
 package code.name.monkey.retromusic.util
 
+import android.os.Build
 import android.util.Log
+import code.name.monkey.retromusic.App
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.model.lyrics.AbsSynchronizedLyrics
 import org.jaudiotagger.audio.AudioFileIO
@@ -51,31 +53,47 @@ object LyricUtil {
         }
     }
 
-    //So in Retro, Lrc file can be same folder as Music File or in RetroMusic Folder
-    // In this case we pass location of the file and Contents to write to file
+    // On Android 11+ direct writes to shared external storage are restricted.
+    // Keep downloaded lyrics in the app-specific external files directory there,
+    // while preserving the original RetroMusic public location on older Android.
+    private fun getAppLrcRoot(): File {
+        return File(App.getContext().getExternalFilesDir(null), "lyrics")
+    }
+
+    private fun getAppLrcFile(title: String, artist: String): File {
+        return File(getAppLrcRoot(), "$title - $artist.lrc")
+    }
+
+    // So in Retro, Lrc file can be same folder as Music File or in RetroMusic Folder.
+    // On Android 11+ the app-specific directory is used for newly downloaded lyrics
+    // because it can be written without broad storage permissions.
     fun writeLrc(song: Song, lrcContext: String) {
-        var writer: FileWriter? = null
-        val location: File?
-        try {
-            if (isLrcOriginalFileExist(song.data)) {
-                location = getLocalLyricOriginalFile(song.data)
-            } else if (isLrcFileExist(song.title, song.artistName)) {
-                location = getLocalLyricFile(song.title, song.artistName)
-            } else {
-                location = File(getLrcPath(song.title, song.artistName))
-                if (location.parentFile?.exists() != true) {
-                    location.parentFile?.mkdirs()
-                }
+        val preferred = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getAppLrcFile(song.title, song.artistName)
+        } else if (isLrcOriginalFileExist(song.data)) {
+            getLocalLyricOriginalFile(song.data)
+        } else if (isLrcFileExist(song.title, song.artistName)) {
+            getLocalLyricFile(song.title, song.artistName)
+        } else {
+            File(getLrcPath(song.title, song.artistName))
+        }
+
+        fun writeTo(file: File): Boolean {
+            return try {
+                file.parentFile?.mkdirs()
+                file.writeText(lrcContext, Charsets.UTF_8)
+                Log.d(TAG, "LRC saved: ${file.absolutePath}")
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "Unable to save LRC: ${file.absolutePath}", e)
+                false
             }
-            writer = FileWriter(location)
-            writer.write(lrcContext)
-        } catch (e: IOException) {
-            e.printStackTrace()
-        } finally {
-            try {
-                writer?.close()
-            } catch (e: IOException) {
-                e.printStackTrace()
+        }
+
+        if (!writeTo(preferred ?: getAppLrcFile(song.title, song.artistName))) {
+            val fallback = getAppLrcFile(song.title, song.artistName)
+            if (fallback.absolutePath != preferred?.absolutePath) {
+                writeTo(fallback)
             }
         }
     }
@@ -146,12 +164,19 @@ object LyricUtil {
     }
 
     fun getSyncedLyricsFile(song: Song): File? {
+        val appFile = getAppLrcFile(song.title, song.artistName)
         return when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && appFile.exists() -> {
+                appFile
+            }
             isLrcOriginalFileExist(song.data) -> {
                 getLocalLyricOriginalFile(song.data)
             }
             isLrcFileExist(song.title, song.artistName) -> {
                 getLocalLyricFile(song.title, song.artistName)
+            }
+            appFile.exists() -> {
+                appFile
             }
             else -> {
                 null

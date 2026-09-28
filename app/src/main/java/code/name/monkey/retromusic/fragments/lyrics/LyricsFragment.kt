@@ -35,18 +35,19 @@ import code.name.monkey.retromusic.activities.tageditor.TagWriter
 import code.name.monkey.retromusic.databinding.FragmentLyricsBinding
 import code.name.monkey.retromusic.extensions.accentColor
 import code.name.monkey.retromusic.extensions.materialDialog
-import code.name.monkey.retromusic.extensions.openUrl
 import code.name.monkey.retromusic.extensions.uri
 import code.name.monkey.retromusic.fragments.base.AbsMainActivityFragment
 import code.name.monkey.retromusic.helper.MusicPlayerRemote
 import code.name.monkey.retromusic.helper.MusicProgressViewUpdateHelper
 import code.name.monkey.retromusic.lyrics.LrcView
+import code.name.monkey.retromusic.lrclib.LrclibClient
 import code.name.monkey.retromusic.model.AudioTagInfo
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.util.FileUtils
 import code.name.monkey.retromusic.util.LyricUtil
 import code.name.monkey.retromusic.util.UriUtil
 import com.afollestad.materialdialogs.input.input
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jaudiotagger.audio.AudioFileIO
@@ -71,15 +72,6 @@ class LyricsFragment : AbsMainActivityFragment(R.layout.fragment_lyrics),
     private lateinit var syncedFileUri: Uri
 
     private var lyricsType: LyricsType = LyricsType.NORMAL_LYRICS
-
-    private val googleSearchLrcUrl: String
-        get() {
-            var baseUrl = "http://www.google.com/search?"
-            var query = song.title + "+" + song.artistName
-            query = "q=" + query.replace(" ", "+") + " lyrics"
-            baseUrl += query
-            return baseUrl
-        }
 
     private lateinit var updateHelper: MusicProgressViewUpdateHelper
 
@@ -190,7 +182,8 @@ class LyricsFragment : AbsMainActivityFragment(R.layout.fragment_lyrics),
 
     override fun onMenuItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.action_search) {
-            openUrl(googleSearchLrcUrl)
+            fetchLyricsFromLrclib(manual = true)
+            return true
         }
         return false
     }
@@ -346,6 +339,155 @@ class LyricsFragment : AbsMainActivityFragment(R.layout.fragment_lyrics),
             binding.noLyricsFound.isVisible = false
             binding.lyricsView.isVisible = true
             LyricsType.SYNCED_LYRICS
+        }
+
+    }
+
+    /**
+     * Fetches synchronized lyrics from LRCLIB when the user presses the
+     * lyrics search button. The result is saved as Metro's standard .lrc
+     * sidecar file and immediately loaded by the existing lyrics renderer.
+     */
+    private fun fetchLyricsFromLrclib(manual: Boolean = false) {
+        val requestedSong = song
+        binding.lyricsView.isVisible = false
+        binding.normalLyrics.isVisible = false
+        binding.noLyricsFound.isVisible = false
+
+        lifecycleScope.launch {
+            try {
+                val result = LrclibClient.getSyncedLyrics(requestedSong)
+
+                if (song.id != requestedSong.id) return@launch
+
+                when (result) {
+                    is LrclibClient.Result.Success -> {
+                        val syncedLyrics = result.lyrics
+                        android.util.Log.d(
+                            "LRCLIB",
+                            "Received ${syncedLyrics.length} characters"
+                        )
+
+                        // Save using Metro's lyrics storage. On Android 11+
+                        // LyricUtil uses the app-specific external directory to
+                        // avoid scoped-storage SecurityException.
+                        LyricUtil.writeLrc(requestedSong, syncedLyrics)
+
+                        val savedFile = LyricUtil.getSyncedLyricsFile(requestedSong)
+                        android.util.Log.d(
+                            "LRCLIB",
+                            "Saved LRC: ${savedFile?.absolutePath ?: "NOT FOUND"}"
+                        )
+
+                        if (savedFile == null || !savedFile.exists()) {
+                            binding.noLyricsFound.isVisible = true
+                            if (manual) {
+                                android.widget.Toast.makeText(
+                                    requireContext(),
+                                    "LRCLIB: unable to save lyrics",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                            }
+                            return@launch
+                        }
+
+                        if (loadLRCLyrics()) {
+                            binding.normalLyrics.isVisible = false
+                            binding.noLyricsFound.isVisible = false
+                            binding.lyricsView.isVisible = true
+                            lyricsType = LyricsType.SYNCED_LYRICS
+
+                            android.util.Log.d(
+                                "LRCLIB",
+                                "Lyrics loaded successfully"
+                            )
+
+                            if (manual) {
+                                android.widget.Toast.makeText(
+                                    requireContext(),
+                                    "Lyrics downloaded from LRCLIB and saved",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } else {
+                            binding.lyricsView.isVisible = false
+                            binding.noLyricsFound.isVisible = true
+                            if (manual) {
+                                android.widget.Toast.makeText(
+                                    requireContext(),
+                                    "Lyrics saved, but Metro could not load them",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
+
+                    is LrclibClient.Result.NotFound -> {
+                        binding.lyricsView.isVisible = false
+                        binding.noLyricsFound.isVisible = true
+                        if (manual) {
+                            android.widget.Toast.makeText(
+                                requireContext(),
+                                "LRCLIB: ${result.message}",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+
+                    is LrclibClient.Result.HttpError -> {
+                        binding.lyricsView.isVisible = false
+                        binding.noLyricsFound.isVisible = true
+                        if (manual) {
+                            android.widget.Toast.makeText(
+                                requireContext(),
+                                "LRCLIB HTTP ${result.code}: ${result.message}",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+
+                    is LrclibClient.Result.NetworkError -> {
+                        binding.lyricsView.isVisible = false
+                        binding.noLyricsFound.isVisible = true
+                        if (manual) {
+                            android.widget.Toast.makeText(
+                                requireContext(),
+                                "LRCLIB network error: ${result.message}",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+
+                    is LrclibClient.Result.InvalidResponse -> {
+                        binding.lyricsView.isVisible = false
+                        binding.noLyricsFound.isVisible = true
+                        if (manual) {
+                            android.widget.Toast.makeText(
+                                requireContext(),
+                                "LRCLIB invalid response: ${result.message}",
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e(
+                    "LRCLIB",
+                    "Exception while saving/loading LRCLIB lyrics",
+                    e
+                )
+
+                binding.lyricsView.isVisible = false
+                binding.noLyricsFound.isVisible = true
+
+                if (manual) {
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        "LRCLIB error: ${e.message ?: e.javaClass.simpleName}",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         }
     }
 
