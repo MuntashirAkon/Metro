@@ -4,6 +4,9 @@
     package="code.name.monkey.retromusic"
     android:installLocation="auto">
 
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <uses-permission
         android:name="android.permission.BLUETOOTH"
         android:maxSdkVersion="30" />
@@ -152,11 +155,6 @@
                 <data android:scheme="file" />
                 <data android:scheme="content" />
                 <data android:mimeType="*/*" />
-                <!--
-                    Work around Android's ugly primitive PatternMatcher
-                    implementation that can't cope with finding a . early in
-                    the path unless it's explicitly matched.
-                -->
                 <data android:host="*" />
                 <data android:pathPattern=".*\\.rmbak" />
                 <data android:pathPattern=".*\\..*\\.rmbak" />
@@ -318,7 +316,6 @@
             android:name="com.lge.support.SPLIT_WINDOW"
             android:value="true" />
 
-        <!-- Android Auto -->
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
@@ -329,7 +326,6 @@
             android:name="com.google.android.gms.car.notification.SmallIcon"
             android:resource="@drawable/ic_notification" />
 
-        <!-- For auto-storage of locale on Android 12 and lower -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
             android:enabled="false"
@@ -340,10 +336,6 @@
         </service>
     </application>
 
-    <!--
-    This is not that important, it's just here so that we can query equalizer package
-    and check if it's present on A11+ because of Package visibility restrictions.
-    -->
     <queries>
         <package android:name="com.android.musicfx" />
     </queries>

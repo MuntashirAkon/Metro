@@ -14,7 +14,7 @@ android {
 
         vectorDrawables.useSupportLibrary = true
 
-        applicationId 'io.github.muntashirakon.Music'
+        applicationId 'com.asphyx.fluid'
         versionCode 10603
         versionName '6.1.0'
 

@@ -11,7 +11,7 @@
         <item>code_name_monkey_donate_8</item>
     </string-array>
 
-    <string name="app_name" translatable="false">Metro</string>
+    <string name="app_name" translatable="false">Fluid</string>
     <string name="git_hub" translatable="false">GitHub</string>
 
     <string name="app_shortcut_last_added_long" translatable="false">@string/last_added</string>
@@ -21,7 +21,6 @@
 
     <string name="empty_text_emoji" translatable="false">&#128561;</string>
 
-    <!-- Material You -->
     <string name="pref_title_md3">Material You</string>
 
     <string name="sort_order_album_artist">@string/album_artist</string>
