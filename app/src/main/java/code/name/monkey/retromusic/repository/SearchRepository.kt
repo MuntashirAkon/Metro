@@ -1,112 +1,192 @@
-/*
- * Copyright (c) 2019 Hemanth Savarala.
- *
- * Licensed under the GNU General Public License v3
- *
- * This is free software: you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by
- *  the Free Software Foundation either version 3 of the License, or (at your option) any later version.
- *
- * This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- */
+package code.name.monkey.retromusic
 
-package code.name.monkey.retromusic.repository
-
-import android.content.Context
-import code.name.monkey.retromusic.R
-import code.name.monkey.retromusic.db.PlaylistWithSongs
-import code.name.monkey.retromusic.fragments.search.Filter
-import code.name.monkey.retromusic.model.Album
-import code.name.monkey.retromusic.model.Artist
+import androidx.room.Room
+import code.name.monkey.retromusic.auto.AutoMusicProvider
+import code.name.monkey.retromusic.db.MIGRATION_23_24
+import code.name.monkey.retromusic.db.RetroDatabase
+import code.name.monkey.retromusic.fragments.LibraryViewModel
+import code.name.monkey.retromusic.fragments.albums.AlbumDetailsViewModel
+import code.name.monkey.retromusic.fragments.artists.ArtistDetailsViewModel
+import code.name.monkey.retromusic.fragments.genres.GenreDetailsViewModel
+import code.name.monkey.retromusic.fragments.playlists.PlaylistDetailsViewModel
+import code.name.monkey.retromusic.innertube.InnerTubeApi
+import code.name.monkey.retromusic.innertube.InnerTubeClient
+import code.name.monkey.retromusic.innertube.InnerTubeRepository
+import code.name.monkey.retromusic.innertube.RealInnerTubeRepository
 import code.name.monkey.retromusic.model.Genre
-import code.name.monkey.retromusic.model.Song
+import code.name.monkey.retromusic.repository.*
+import com.google.gson.GsonBuilder
+import okhttp3.OkHttpClient
+import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.dsl.bind
+import org.koin.dsl.module
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
-class RealSearchRepository(
-    private val songRepository: SongRepository,
-    private val albumRepository: AlbumRepository,
-    private val artistRepository: ArtistRepository,
-    private val roomRepository: RoomRepository,
-    private val genreRepository: GenreRepository,
-) {
-    suspend fun searchAll(context: Context, query: String?, filter: Filter): MutableList<Any> {
-        val results = mutableListOf<Any>()
-        if (query.isNullOrEmpty()) return results
-        query.let { searchString ->
+private val roomModule = module {
+    single {
+        Room.databaseBuilder(androidContext(), RetroDatabase::class.java, "playlist.db")
+            .addMigrations(MIGRATION_23_24)
+            .build()
+    }
 
-            /** Songs **/
-            val songs: List<Song> = if (filter == Filter.SONGS || filter == Filter.NO_FILTER) {
-                songRepository.songs(searchString)
-            } else {
-                emptyList()
-            }
-            if (songs.isNotEmpty()) {
-                results.add(context.resources.getString(R.string.songs))
-                results.addAll(songs)
-            }
+    factory {
+        get<RetroDatabase>().playlistDao()
+    }
 
-            /** Artists **/
-            val artists: List<Artist> =
-                if (filter == Filter.ARTISTS || filter == Filter.NO_FILTER) {
-                    artistRepository.artists(searchString)
-                } else {
-                    emptyList()
-                }
-            if (artists.isNotEmpty()) {
-                results.add(context.resources.getString(R.string.artists))
-                results.addAll(artists)
-            }
+    factory {
+        get<RetroDatabase>().playCountDao()
+    }
 
-            /** Albums **/
-            val albums: List<Album> = if (filter == Filter.ALBUMS || filter == Filter.NO_FILTER) {
-                albumRepository.albums(searchString)
-            } else {
-                emptyList()
-            }
-            if (albums.isNotEmpty()) {
-                results.add(context.resources.getString(R.string.albums))
-                results.addAll(albums)
-            }
+    factory {
+        get<RetroDatabase>().historyDao()
+    }
 
-            /** Album-Artists **/
-            val albumArtists: List<Artist> =
-                if (filter == Filter.ALBUM_ARTISTS || filter == Filter.NO_FILTER) {
-                    artistRepository.albumArtists(searchString)
-                } else {
-                    emptyList()
-                }
-            if (albumArtists.isNotEmpty()) {
-                results.add(context.resources.getString(R.string.album_artist))
-                results.addAll(albumArtists)
-            }
-
-            /** Genres **/
-            val genres: List<Genre> = if (filter == Filter.GENRES || filter == Filter.NO_FILTER) {
-                genreRepository.genres(query)
-            } else {
-                emptyList()
-            }
-            if (genres.isNotEmpty()) {
-                results.add(context.resources.getString(R.string.genres))
-                results.addAll(genres)
-            }
-
-            /** Playlists **/
-            val playlist: List<PlaylistWithSongs> =
-                if (filter == Filter.PLAYLISTS || filter == Filter.NO_FILTER) {
-                    roomRepository.playlistWithSongs().filter { playlist ->
-                        playlist.playlistEntity.playlistName.lowercase().contains(searchString.lowercase())
-                    }
-                } else {
-                    emptyList()
-                }
-
-            if (playlist.isNotEmpty()) {
-                results.add(context.getString(R.string.playlists))
-                results.addAll(playlist)
-            }
-        }
-        return results
+    single {
+        RealRoomRepository(get(), get(), get())
+    } bind RoomRepository::class
+}
+private val autoModule = module {
+    single {
+        AutoMusicProvider(
+            androidContext(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get()
+        )
     }
 }
+private val mainModule = module {
+    single {
+        androidContext().contentResolver
+    }
+}
+private val networkModule = module {
+    single {
+        OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+    }
+
+    single {
+        Retrofit.Builder()
+            .baseUrl("https://www.youtube.com/")
+            .client(get())
+            .addConverterFactory(GsonConverterFactory.create(GsonBuilder().create()))
+            .build()
+            .create(InnerTubeApi::class.java)
+    }
+
+    single {
+        InnerTubeClient(get())
+    }
+
+    single {
+        RealInnerTubeRepository(get())
+    } bind InnerTubeRepository::class
+}
+private val dataModule = module {
+    single {
+        RealRepository(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+        )
+    } bind Repository::class
+
+    single {
+        RealSongRepository(get())
+    } bind SongRepository::class
+
+    single {
+        RealGenreRepository(get(), get())
+    } bind GenreRepository::class
+
+    single {
+        RealAlbumRepository(get())
+    } bind AlbumRepository::class
+
+    single {
+        RealArtistRepository(get(), get())
+    } bind ArtistRepository::class
+
+    single {
+        RealPlaylistRepository(get())
+    } bind PlaylistRepository::class
+
+    single {
+        RealTopPlayedRepository(get(), get(), get(), get())
+    } bind TopPlayedRepository::class
+
+    single {
+        RealLastAddedRepository(
+            get(),
+            get(),
+            get()
+        )
+    } bind LastAddedRepository::class
+
+    single {
+        RealSearchRepository(
+            get(),
+            get(),
+            get(),
+            get(),
+            get(),
+            get()
+        )
+    }
+}
+
+private val viewModules = module {
+
+    viewModel {
+        LibraryViewModel(get())
+    }
+
+    viewModel { (albumId: Long) ->
+        AlbumDetailsViewModel(
+            get(),
+            albumId
+        )
+    }
+
+    viewModel { (artistId: Long?, artistName: String?) ->
+        ArtistDetailsViewModel(
+            get(),
+            artistId,
+            artistName
+        )
+    }
+
+    viewModel { (playlistId: Long) ->
+        PlaylistDetailsViewModel(
+            get(),
+            playlistId
+        )
+    }
+
+    viewModel { (genre: Genre) ->
+        GenreDetailsViewModel(
+            get(),
+            genre
+        )
+    }
+}
+
+val appModules = listOf(mainModule, networkModule, dataModule, autoModule, viewModules, roomModule)

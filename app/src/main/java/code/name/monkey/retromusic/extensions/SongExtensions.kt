@@ -1,11 +1,17 @@
 package code.name.monkey.retromusic.extensions
 
+import android.net.Uri
 import android.support.v4.media.MediaDescriptionCompat
 import android.support.v4.media.session.MediaSessionCompat.QueueItem
 import code.name.monkey.retromusic.model.Song
 import code.name.monkey.retromusic.util.MusicUtil
 
-val Song.uri get() = MusicUtil.getSongFileUri(songId = id)
+val Song.uri: Uri
+    get() = if (data.startsWith("http://") || data.startsWith("https://")) {
+        Uri.parse(data)
+    } else {
+        MusicUtil.getSongFileUri(songId = id)
+    }
 
 val Song.albumArtUri get() = MusicUtil.getMediaStoreAlbumCoverUri(albumId)
 
